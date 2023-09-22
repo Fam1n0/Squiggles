@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #000;
+    }
+    canvas {
+        display: block;
+    }
+    #saveButton {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px;
+        color: #fff;
+        background-color: #000;
+        border: 2px solid #fff;
+    }
+</style>
+</head>
+<body>
+<canvas id="doodleCanvas"></canvas>
+<button id="saveButton">Save Snapshot</button>
+<script>
+    let canvas = document.getElementById('doodleCanvas');
+    let ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let x = Math.random() * canvas.width;
+    let y = Math.random() * canvas.height;
+
+    let squiggles = [];
+    let backgroundColor = 0;
+    const lifeSpan = 180000; // 3 minutes in milliseconds
+
+    function draw() {
+        let currentTime = Date.now();
+
+        ctx.fillStyle = `hsl(${backgroundColor}, 100%, 50%)`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        ctx.lineWidth = Math.random() * 10; // Increased line width
+
+        let nextX = x + (Math.random() - 0.5) * 50; // Increased movement
+        let nextY = y + (Math.random() - 0.5) * 50; // Increased movement
+
+        let cp1x = x + Math.random() * 100 - 50;  // Adjusted control points
+        let cp1y = y + Math.random() * 100 - 50;  // Adjusted control points
+        let cp2x = nextX + Math.random() * 100 - 50;  // Adjusted control points
+        let cp2y = nextY + Math.random() * 100 - 50;  // Adjusted control points
+
+        squiggles.push({ x, y, cp1x, cp1y, cp2x, cp2y, nextX, nextY, color: ctx.strokeStyle, width: ctx.lineWidth, timestamp: currentTime });
+
+        squiggles = squiggles.filter(squiggle => currentTime - squiggle.timestamp < lifeSpan);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = `hsl(${backgroundColor}, 100%, 50%)`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        squiggles.forEach(squiggle => {
+            ctx.strokeStyle = squiggle.color;
+            ctx.lineWidth = squiggle.width;
+            ctx.beginPath();
+            ctx.moveTo(squiggle.x, squiggle.y);
+            ctx.bezierCurveTo(squiggle.cp1x, squiggle.cp1y, squiggle.cp2x, squiggle.cp2y, squiggle.nextX, squiggle.nextY);
+            ctx.stroke();
+        });
+
+        x = nextX;
+        y = nextY;
+
+        backgroundColor = (backgroundColor + 0.1) % 360;
+
+        requestAnimationFrame(draw);
+    }
+
+    function changePosition() {
+        x = Math.random() * canvas.width;
+        y = Math.random() * canvas.height;
+        setTimeout(changePosition, Math.random() * 5000 + 2000);
+    }
+
+    function saveSnapshot() {
+        let link = document.createElement('a');
+        link.download = 'snapshot.png';
+        link.href = canvas.toDataURL()
+        link.click();
+    }
+
+    document.getElementById('saveButton').addEventListener('click', saveSnapshot);
+
+    canvas.addEventListener('mousemove', function(e) {
+        x = e.clientX;
+        y = e.clientY;
+    });
+
+    draw();
+    changePosition();
+
+    // Additional: Integrate sound (I'm leaving it as a comment since the implementation might vary)
+    // function playSound() {
+    //     // Implement a function to play evolving sounds based on the canvas state.
+    // }
+    // playSound();
+</script>
+</body>
+</html>
